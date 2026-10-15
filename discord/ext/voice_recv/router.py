@@ -109,7 +109,9 @@ class PacketRouter(threading.Thread):
             with self._lock:
                 for decoder in self.waiter.items:
                     data = decoder.pop_data()
-                    if data is not None:
+                    # data.source is None for dropped/undecryptable packets
+                    # (PR #54 by rdphillips7)
+                    if data is not None and data.source is not None:
                         self.sink.write(data.source, data)
 
 
