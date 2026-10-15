@@ -14,6 +14,13 @@ if TYPE_CHECKING:
 
     TimeFunc = Callable[[], float]
 
+# Set to True to re-enable the verbose per-packet logging in the
+# receive/decrypt/decode pipeline (reader, router, buffer, opus).
+# Kept False so normal operation stays quiet on the console.
+# Can also be toggled at runtime:
+#   discord.ext.voice_recv.utils.VERBOSE_PACKET_LOGS = True
+VERBOSE_PACKET_LOGS: bool = False
+
 _dataT = TypeVar("_dataT")
 
 

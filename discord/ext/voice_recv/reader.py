@@ -10,6 +10,7 @@ from operator import itemgetter
 from typing import TYPE_CHECKING
 
 from . import rtp
+from . import utils
 from .sinks import AudioSink
 from .router import PacketRouter, SinkEventRouter
 
@@ -143,19 +144,23 @@ class AudioReader:
                 packet = rtcp_packet = rtp.decode_rtcp(self.decryptor.decrypt_rtcp(packet_data))
 
                 if not isinstance(packet, rtp.ReceiverReportPacket):
-                    log.info("Received unexpected rtcp packet: type=%s, %s", packet.type, type(packet))
-                    log.debug("Packet info:\n  packet=%s\n  data=%s", packet, packet_data)
+                    if utils.VERBOSE_PACKET_LOGS:
+                        log.info("Received unexpected rtcp packet: type=%s, %s", packet.type, type(packet))
+                        log.debug("Packet info:\n  packet=%s\n  data=%s", packet, packet_data)
         except CryptoError as e:
-            log.error("CryptoError decoding packet data")
-            log.debug("CryptoError details:\n  data=%s\n  secret_key=%s", packet_data, self.voice_client.secret_key)
+            if utils.VERBOSE_PACKET_LOGS:
+                log.error("CryptoError decoding packet data")
+                log.debug("CryptoError details:\n  data=%s\n  secret_key=%s", packet_data, self.voice_client.secret_key)
             return
         except Exception as e:
             if self._is_ip_discovery_packet(packet_data):
-                log.debug("Ignoring ip discovery packet")
+                if utils.VERBOSE_PACKET_LOGS:
+                    log.debug("Ignoring ip discovery packet")
                 return
 
-            log.exception("Error unpacking packet")
-            log.debug("Packet data: len=%s data=%s", len(packet_data), packet_data)
+            if utils.VERBOSE_PACKET_LOGS:
+                log.exception("Error unpacking packet")
+                log.debug("Packet data: len=%s data=%s", len(packet_data), packet_data)
         finally:
             if self.error:
                 self.stop()
@@ -172,10 +177,12 @@ class AudioReader:
                 if rtp_packet.is_silence():
                     # TODO: buffer packets from unknown ssrcs, 50 max?
                     # also remove this log later its pointless
-                    log.debug("Skipping silence packet for unknown ssrc %s", ssrc)
+                    if utils.VERBOSE_PACKET_LOGS:
+                        log.debug("Skipping silence packet for unknown ssrc %s", ssrc)
                     return
                 else:
-                    log.info("Received packet for unknown ssrc %s:\n%s", ssrc, rtp_packet)
+                    if utils.VERBOSE_PACKET_LOGS:
+                        log.info("Received packet for unknown ssrc %s:\n%s", ssrc, rtp_packet)
 
             self.speaking_timer.notify(ssrc)
             try:

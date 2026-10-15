@@ -6,6 +6,7 @@ import heapq
 import logging
 import threading
 
+from . import utils
 from .utils import gap_wrapped, add_wrapped
 
 
@@ -149,7 +150,8 @@ class HeapJitterBuffer(BaseBuffer[PacketT]):
         # for the gap between _last_tx_seq and the current one, a large gap is old, a small gap is new
         # the gap for old packets will generally be very large since they wrap all the way around
         if gap_wrapped(self._last_tx_seq, seq) > self._threshold and self._last_tx_seq != -1:
-            log.debug("Dropping old packet %s", packet)
+            if utils.VERBOSE_PACKET_LOGS:
+                log.debug("Dropping old packet %s", packet)
             return False
 
         self._push(packet)

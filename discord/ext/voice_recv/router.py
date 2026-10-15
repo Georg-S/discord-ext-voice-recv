@@ -8,6 +8,7 @@ import threading
 
 from collections import deque
 
+from . import utils
 from .utils import MultiDataEvent
 from .opus import PacketDecoder
 
@@ -42,7 +43,8 @@ class PacketRouter(threading.Thread):
         # TODO: stale packet check
 
         if packet.ssrc in self._dropped_ssrcs:
-            log.debug("Ignoring packet from dropped ssrc %s", packet.ssrc)
+            if utils.VERBOSE_PACKET_LOGS:
+                log.debug("Ignoring packet from dropped ssrc %s", packet.ssrc)
             return
 
         with self._lock:
@@ -130,7 +132,8 @@ class SinkEventRouter(threading.Thread):
         self.register_events()
 
     def dispatch(self, event: str, /, *args: Any, **kwargs: Any) -> None:
-        log.debug("Dispatching voice_client event %s", event)
+        if utils.VERBOSE_PACKET_LOGS:
+            log.debug("Dispatching voice_client event %s", event)
         self._buffer.put_nowait((event, args, kwargs))
 
     def set_sink(self, sink: AudioSink) -> None:

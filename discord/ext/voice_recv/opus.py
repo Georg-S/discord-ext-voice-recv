@@ -6,6 +6,7 @@ import logging
 
 from typing import TYPE_CHECKING, Final
 
+from . import utils
 from .buffer import HeapJitterBuffer as JitterBuffer
 from .rtp import FakePacket
 from .utils import add_wrapped
@@ -122,13 +123,14 @@ class PacketDecoder:
             if self._buffer:
                 packets = self._buffer.flush()
                 if any(packets[1:]):
-                    log.warning(
-                        "%s packets were lost being flushed in decoder-%s\n --> (last=%s) %s",
-                        len(packets) - 1,
-                        self.ssrc,
-                        self._last_seq,
-                        [p.sequence for p in packets],
-                    )
+                    if utils.VERBOSE_PACKET_LOGS:
+                        log.warning(
+                            "%s packets were lost being flushed in decoder-%s\n --> (last=%s) %s",
+                            len(packets) - 1,
+                            self.ssrc,
+                            self._last_seq,
+                            [p.sequence for p in packets],
+                        )
                 return packets[0]
             return
         elif not packet:
@@ -186,11 +188,12 @@ class PacketDecoder:
         if next_packet is not None:
             nextdata: bytes = next_packet.decrypted_data  # type: ignore
 
-            log.debug(
-                "Generating fec packet: fake=%s, fec=%s",
-                packet.sequence,
-                next_packet.sequence,
-            )
+            if utils.VERBOSE_PACKET_LOGS:
+                log.debug(
+                    "Generating fec packet: fake=%s, fec=%s",
+                    packet.sequence,
+                    next_packet.sequence,
+                )
             pcm = self._decoder.decode(nextdata, fec=True)
 
         # Need to drop a packet
